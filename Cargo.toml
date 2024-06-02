@@ -21,7 +21,7 @@ proc-macro2 = "1.0"
 quote = "1.0"
 proc-macro-error = "1.0"
 syn = { version = "1.0", features = [ "visit-mut", "full", "extra-traits" ] }
-pulldown-cmark = { version = "0.11", default-features = false }
+pulldown-cmark = { version = "0.11", default-features = false, optional = true }
 
 [dev-dependencies]
 async-trait = "0.1"
@@ -30,7 +30,11 @@ async-std = { version = "1", features = [ "attributes" ] }
 tokio = { version = "1", features = [ "macros", "rt-multi-thread" ] }
 
 [features]
-default = []
+default = ["doctests"]
 debug = []
 no-debug = []
+doctests = ["pulldown-cmark"]
 
+[[test]]
+name = "doctests"
+required-features = ["doctests"]
