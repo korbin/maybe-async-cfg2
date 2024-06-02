@@ -28,7 +28,7 @@
 //!
 //! **RECOMMENDATION**: Enable **resolver ver2** in your crate, which is introduced in Rust 1.51. If
 //! not, two crates in dependency with conflict version (one async and another blocking) can fail
-//! complilation.
+//! compilation.
 //!
 //!
 //! ## Motivation
@@ -38,7 +38,7 @@
 //!
 //! In many crates, the async and sync version of crates shares the same API, but the minor
 //! difference that all async code must be awaited prevent the unification of async and sync code.
-//! In other words, we are forced to write an async and an sync implementation repectively.
+//! In other words, we are forced to write an async and an sync implementation respectively.
 //!
 //!
 //! ## Macros in Detail
@@ -89,7 +89,7 @@
 //!         f: Foo,
 //!     }
 //!     ```
-//!     After convertation:
+//!     After conversion:
 //!     ```rust
 //!     #[cfg(feature="use_sync")]
 //!     struct StructSync {
@@ -129,7 +129,7 @@
 //!     }
 //!     } // content!
 //!     ```
-//!     After convertation:
+//!     After conversion:
 //!     ```rust
 //!     #[cfg(feature="use_sync")]
 //!     struct StructSync {
@@ -173,7 +173,7 @@
 //!     f: Foo,
 //! }
 //! ```
-//! After convertation:
+//! After conversion:
 //! ```rust
 //! #[cfg(feature="use_sync")]
 //! /// This is a structure. 
@@ -208,7 +208,7 @@
 //! and async one by `is_sync` feature gate when we add `maybe-async-cfg` to dependency.
 //!
 //! 
-//! ## Аppreciations
+//! ## Acknowledgements
 //! 
 //! This crate is a redesigned fork of these wonderful crates:
 //! 
@@ -312,7 +312,7 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 ///         sync_only_field: bool,
 ///     }
 ///     ```
-///     After convertation:
+///     After conversion:
 ///     ```rust 
 ///     #[cfg(feature="use_sync")]
 ///     struct StructSync {
@@ -341,7 +341,7 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 ///         f: Foo,
 ///     }
 ///     ```
-///     After convertation:
+///     After conversion:
 ///     ```rust
 ///     #[cfg(feature="use_sync")]
 ///     struct StructSync {
@@ -408,7 +408,7 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 ///         let _ = xizzy( Qux::flob(b).await );
 ///     }
 ///     ```
-///     After convertation:
+///     After conversion:
 ///     ```rust
 ///     #[cfg(feature="use_sync")]
 ///     fn func_sync() {
@@ -473,7 +473,7 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 ///         field1: bool,
 ///     }
 ///     ```
-///     After convertation:
+///     After conversion:
 ///     ```rust
 ///     #[cfg(feature="use_sync")]
 ///     struct StructSync {
@@ -504,7 +504,7 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 ///         field: bool,
 ///     }
 ///     ```
-///     After convertation:
+///     After conversion:
 ///     ```rust
 ///     #[cfg(feature="use_sync")]
 ///     struct StructSync {
@@ -539,7 +539,7 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 ///         todo!()
 ///     }
 ///     ```
-///     After convertation:
+///     After conversion:
 ///     ```rust
 ///     #[xizzy]
 ///     #[cfg(feature="use_sync")]
@@ -681,7 +681,7 @@ pub fn remove(_: TokenStream, _: TokenStream) -> TokenStream {
 /// }
 /// } // content!
 /// ```
-/// After convertation:
+/// After conversion:
 /// ```rust
 /// #[cfg(feature="use_sync")]
 /// struct StructSync {

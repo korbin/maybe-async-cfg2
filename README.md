@@ -30,7 +30,7 @@ The `maybe` procedural macro can be applied to the following codes:
 
 **RECOMMENDATION**: Enable **resolver ver2** in your crate, which is introduced in Rust 1.51. If
 not, two crates in dependency with conflict version (one async and another blocking) can fail
-complilation.
+compilation.
 
 
 ## Motivation
@@ -40,7 +40,7 @@ style, now the async code really resembles sync version code.
 
 In many crates, the async and sync version of crates shares the same API, but the minor
 difference that all async code must be awaited prevent the unification of async and sync code.
-In other words, we are forced to write an async and an sync implementation repectively.
+In other words, we are forced to write an async and an sync implementation respectively.
 
 
 ## Macros in Detail
@@ -91,7 +91,7 @@ sync code should be generated.
         f: Foo,
     }
     ```
-    After convertation:
+    After conversion:
     ```rust
     #[cfg(feature="use_sync")]
     struct StructSync {
@@ -131,7 +131,7 @@ internal `default` attribute with the required parameters inside the `content` m
     }
     } // content!
     ```
-    After convertation:
+    After conversion:
     ```rust
     #[cfg(feature="use_sync")]
     struct StructSync {
@@ -175,7 +175,7 @@ struct Struct {
     f: Foo,
 }
 ```
-After convertation:
+After conversion:
 ```rust
 #[cfg(feature="use_sync")]
 /// This is a structure. 
@@ -210,7 +210,7 @@ from writing almost the same code for sync and async. We can toggle between a sy
 and async one by `is_sync` feature gate when we add `maybe-async-cfg` to dependency.
 
 
-## Аppreciations
+## Acknowledgements
 
 This crate is a redesigned fork of these wonderful crates:
 
