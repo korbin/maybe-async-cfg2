@@ -1,4 +1,4 @@
-use pulldown_cmark::{Parser, Event, Tag, CodeBlockKind};
+use pulldown_cmark::{Parser, Event, Tag, TagEnd, CodeBlockKind};
 
 fn as_lang_tokens(string: &str) -> impl Iterator<Item = &str> {
     // Pandoc, which Rust once used for generating documentation,
@@ -169,7 +169,7 @@ pub fn process_doctests(doc: &str, processor: impl Fn(&str, &str) -> Option<Opti
                     };
                 }
             },
-            Event::End(Tag::CodeBlock(_)) => {
+            Event::End(TagEnd::CodeBlock) => {
                 if level == 1 && inside_code {
                     let content = &doc[prev_offset..offset.end];
                     prev_offset = offset.end;
