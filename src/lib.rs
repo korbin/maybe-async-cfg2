@@ -223,7 +223,9 @@
 //! MIT
 #![deny(missing_docs)]
 #![deny(rustdoc::missing_crate_level_docs)]
-#![deny(rustdoc::missing_doc_code_examples)]
+
+// note: the `rustdoc::missing_doc_code_examples` lint is unstable
+//#![deny(rustdoc::missing_doc_code_examples)]
 
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
