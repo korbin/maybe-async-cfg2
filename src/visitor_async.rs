@@ -3,6 +3,7 @@ use std::{collections::HashMap, iter::FromIterator};
 
 #[allow(unused_imports)]
 use proc_macro::{TokenStream};
+#[cfg(feature = "doctests")]
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{visit_mut::VisitMut, spanned::Spanned};
@@ -10,9 +11,13 @@ use syn::{visit_mut::VisitMut, spanned::Spanned};
 use crate::{
     MACRO_NOOP_NAME, MACRO_REMOVE_NAME, MACRO_ONLY_IF_NAME, MACRO_REMOVE_IF_NAME,
     params::{ConvertMode, MacroParameters},
-    utils::{AttributeArgsInParens, PunctuatedList, EqStr, make_path, make_attr_from_str},
+    utils::{AttributeArgsInParens, PunctuatedList,  make_attr_from_str},
     visit_ext::{IdentMode, VisitMutExt, Visitor},
+};
+#[cfg(feature = "doctests")]
+use crate::{
     doctests::process_doctests,
+    utils::{EqStr, make_path},
 };
 
 pub struct AsyncAwaitVisitor<'p> {
@@ -202,6 +207,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
         Ok(())
     }
 
+    #[cfg(feature = "doctests")]
     fn process_doc_attrs(&mut self, attrs: &mut Vec<syn::Attribute>) -> syn::Result<()> {
 
         let mut acc: Vec<syn::Attribute> = vec![];
@@ -303,6 +309,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
     }
 
     fn process_attrs(&mut self, attrs: &mut Vec<syn::Attribute>) -> syn::Result<()> {
+        #[cfg(feature = "doctests")]
         self.process_doc_attrs(attrs)?;
 
         for attr in attrs.iter_mut() {
