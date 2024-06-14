@@ -185,6 +185,7 @@ impl<T: ToTokens> std::fmt::Debug for OptionToTokens<T> {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 pub struct EqStr {
+    #[allow(dead_code)]
     pub eq: Token![=],
     pub str: syn::LitStr,
 }
