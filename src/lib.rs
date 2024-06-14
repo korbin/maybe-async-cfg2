@@ -235,6 +235,7 @@ mod visit_ext;
 mod visitor_async;
 mod visitor_content;
 
+#[cfg(feature = "doctests")]
 mod doctests;
 
 mod debug;
