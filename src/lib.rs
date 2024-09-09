@@ -227,8 +227,8 @@
 // note: the `rustdoc::missing_doc_code_examples` lint is unstable
 //#![deny(rustdoc::missing_doc_code_examples)]
 
+use manyhow::manyhow;
 use proc_macro::TokenStream;
-use proc_macro_error::proc_macro_error;
 
 mod macros;
 mod params;
@@ -627,39 +627,39 @@ const STANDARD_MACROS: &'static [&'static str] = &[
 /// > _Attribute_ :\
 /// > &nbsp;&nbsp;&nbsp;&nbsp;(_IDENTIFIER_ | _Path_) (`(` _ANY_VALID_ARGS_ `)`)<sup>\?</sup>\
 /// > &nbsp;&nbsp;|&nbsp;_STRING_LITERAL_
-#[proc_macro_error]
+#[manyhow]
 #[proc_macro_attribute]
-pub fn maybe(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn maybe(args: TokenStream, input: TokenStream) -> syn::Result<TokenStream> {
     macros::maybe(args, input)
 }
 
 /// Marks conditional content that should only be used in the specified version of the code.
-#[proc_macro_error]
+#[manyhow]
 #[proc_macro_attribute]
-pub fn only_if(_: TokenStream, body: TokenStream) -> TokenStream {
-    body
+pub fn only_if(_: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
+    Ok(body)
 }
 
 /// Marks conditional content that should be used in all versions of the code except the specified 
 /// one.
-#[proc_macro_error]
+#[manyhow]
 #[proc_macro_attribute]
-pub fn remove_if(_: TokenStream, body: TokenStream) -> TokenStream {
-    body
+pub fn remove_if(_: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
+    Ok(body)
 }
 
 /// Does nothing (leaves content intact).
-#[proc_macro_error]
+#[manyhow]
 #[proc_macro_attribute]
-pub fn noop(_: TokenStream, body: TokenStream) -> TokenStream {
-    body
+pub fn noop(_: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
+    Ok(body)
 }
 
 /// Removes marked content.
-#[proc_macro_error]
+#[manyhow]
 #[proc_macro_attribute]
-pub fn remove(_: TokenStream, _: TokenStream) -> TokenStream {
-    TokenStream::new()
+pub fn remove(_: TokenStream, _: TokenStream) -> syn::Result<TokenStream> {
+    Ok(TokenStream::new())
 }
 
 /// A wrapper for code with common `maybe` parameters
@@ -704,9 +704,8 @@ pub fn remove(_: TokenStream, _: TokenStream) -> TokenStream {
 ///     todo!()
 /// }
 /// ```
-/// 
-#[proc_macro_error]
+#[manyhow]
 #[proc_macro]
-pub fn content(body: TokenStream) -> TokenStream {
+pub fn content(body: TokenStream) -> syn::Result<TokenStream> {
     macros::content(body)
 }

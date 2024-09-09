@@ -4,12 +4,10 @@ use std::iter::FromIterator;
 #[allow(unused_imports)]
 use proc_macro::TokenStream;
 use proc_macro2::{Delimiter, Group, TokenStream as TokenStream2, TokenTree};
-use proc_macro_error::emit_error;
 use quote::quote;
 
 use crate::{
     params::MacroParameters,
-    utils::{set_error_and_return, unwrap_or_set_error_and_return},
     visit_ext::{VisitMutExt, Visitor},
     DEFAULT_CRATE_NAME, MACRO_MAYBE_NAME, MACRO_DEFAULT_NAME,
 };
@@ -39,10 +37,10 @@ impl ContentVisitor {
     fn process_file(&mut self, node: &mut syn::File) -> syn::Result<()> {
         node.attrs.retain(|attr| {
             if let Some(prefix) = is_default_attr(attr) {
-                self.params = unwrap_or_set_error_and_return!(
-                    MacroParameters::from_tokens_in_parens(attr.tokens.clone().into()),
-                    false
-                );
+                // TODO: This bit may not be right
+                if MacroParameters::from_tokens_in_parens(attr.tokens.clone().into()).is_err() {
+                    return false
+                };
                 self.params.prefix_set(prefix);
                 false
             } else {

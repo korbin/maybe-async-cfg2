@@ -1,14 +1,10 @@
-use proc_macro_error::abort;
-
 #[allow(unused_imports)]
 use std::iter::FromIterator;
 
 use proc_macro::TokenStream;
 
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{
-    parse_macro_input, spanned::Spanned, visit_mut::VisitMut,
-};
+use syn::{spanned::Spanned, visit_mut::VisitMut};
 
 #[allow(unused_imports)]
 use quote::{quote, ToTokens};
@@ -16,7 +12,6 @@ use quote::{quote, ToTokens};
 use crate::{
     MACRO_MAYBE_NAME,
     params::{ConvertMode, MacroParameters},
-    utils::{unwrap_or_error},
     visit_ext::Visitor,
     visitor_async::{
         AsyncAwaitVisitor, remove_asyncness_on_trait, remove_asyncness_on_impl,
@@ -27,20 +22,19 @@ use crate::{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub fn maybe(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn maybe(args: TokenStream, input: TokenStream) -> syn::Result<TokenStream> {
     dump_maybe!(&args, &input);
 
-    let params = unwrap_or_error!(MacroParameters::from_tokens(args));
+    let params = MacroParameters::from_tokens(args)?;
     dump_params!("maybe params", &params);
 
     if params.disable_get() {
-        return input;
+        return Ok(input);
     }
 
     if let Some(convert_mode) = params.mode_get() {
         return convert(params, input, convert_mode)
     }
-
 
     let mut tokens = TokenStream::new();
 
@@ -49,15 +43,15 @@ pub fn maybe(args: TokenStream, input: TokenStream) -> TokenStream {
 
         match version.kind {
             ConvertMode::IntoAsync | ConvertMode::IntoSync => {
-                let _ = unwrap_or_error!(version
+                let _ = version
                     .params
-                    .extend_tokenstream2_with_cfg_outer_attrs(&mut ts));
+                    .extend_tokenstream2_with_cfg_outer_attrs(&mut ts)?;
                 let name = params.make_self_path(MACRO_MAYBE_NAME);
                 let args = version.params.to_tokens(Some(version.kind));
                 ts.extend(quote!(#[#name(#args)]));
 
                 let _ =
-                    unwrap_or_error!(version.params.extend_tokenstream2_with_inner_attrs(&mut ts));
+                    version.params.extend_tokenstream2_with_inner_attrs(&mut ts)?;
             }
         }
 
@@ -68,15 +62,15 @@ pub fn maybe(args: TokenStream, input: TokenStream) -> TokenStream {
 
     dump_tokens!("maybe after", &tokens);
 
-    tokens
+    Ok(tokens)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub fn convert(mut params: MacroParameters, input: TokenStream, convert_mode: ConvertMode) -> TokenStream {
+pub fn convert(mut params: MacroParameters, input: TokenStream, convert_mode: ConvertMode) -> syn::Result<TokenStream> {
     dump_tokens!("convert before", &input);
 
-    let mut file = parse_macro_input!(input as syn::File);
+    let mut file = syn::parse_macro_input::parse::<syn::File>(input)?;
     for item in &mut file.items {
         match item {
             syn::Item::Impl(item) => convert_impl(&mut params, item, convert_mode),
@@ -87,14 +81,14 @@ pub fn convert(mut params: MacroParameters, input: TokenStream, convert_mode: Co
             syn::Item::Use(item) => convert_use(&mut params, item, convert_mode),
             syn::Item::Mod(item) => convert_mod(&mut params, item, convert_mode),
             _ => {
-                abort!(item.span(), "Allowed impl, struct, enum, trait, fn or use items only");
+                return Err(syn::Error::new(item.span(), "Allowed impl, struct, enum, trait, fn or use items only"));
             }
         }
     }
     let ts = quote!(#file);
 
     dump_tokens2!("convert after", &ts);
-    ts.into()
+    Ok(ts.into())
 }
 
 fn convert_impl(params: &mut MacroParameters, item: &mut syn::ItemImpl, convert_mode: ConvertMode) {
@@ -166,12 +160,12 @@ fn convert_mod(params: &mut MacroParameters, item: &mut syn::ItemMod, convert_mo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub fn content(body: TokenStream) -> TokenStream {
+pub fn content(body: TokenStream) -> syn::Result<TokenStream> {
     dump_tokens!("content before", &body);
 
     let mut visitor = Visitor::new(ContentVisitor::new());
-    let ts: TokenStream = visitor.process(body.into()).into();
+    let ts: TokenStream = visitor.process(body.into())?.into();
 
     dump_tokens!("content after", &ts);
-    ts
+    Ok(ts)
 }

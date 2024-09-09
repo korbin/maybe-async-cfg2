@@ -4,13 +4,10 @@ use std::iter::FromIterator;
 #[allow(unused_imports)]
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use proc_macro_error::{emit_error, abort};
 use quote::quote;
 use syn::{
     visit_mut::{self, VisitMut},
 };
-
-use crate::utils::unwrap_or_error;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -79,15 +76,15 @@ impl<T> Visitor<T> {
         Self { inner }
     }
 
-    pub fn process(&mut self, item: TokenStream2) -> TokenStream2
+    pub fn process(&mut self, item: TokenStream2) -> syn::Result<TokenStream2>
     where
         Self: VisitMutExt,
     {
-        let mut syntax_tree: syn::File = unwrap_or_error!(syn::parse(item.into()));
+        let mut syntax_tree: syn::File = syn::parse(item.into())?;
         self.visit_file_mut(&mut syntax_tree);
         let ts = quote!(#syntax_tree);
 
-        ts
+        Ok(ts)
     }
 }
 
@@ -104,21 +101,11 @@ macro_rules! impl_fn {
     };
     (@func $self:expr, $node:ident, $proc:ident(node $(.$path:ident)? as Some($expr:tt) $(, $mode:expr)?) ) => {
         if let Some(value) = impl_fn!(@arg $node $(.$path)?) {
-            match $self.$proc( impl_fn!(@expr value, $expr) $(, $mode)? ) {
-                Ok(_) => {},
-                Err(e) => {
-                    emit_error!(e)
-                }
-            };
+            $self.$proc( impl_fn!(@expr value, $expr) $(, $mode)? ).unwrap();
         };
     };
     (@func $self:expr, $node:ident, $proc:ident(node $(.$path:ident)? $(, $mode:expr)?) ) => {
-        match $self.$proc( impl_fn!(@arg $node $(.$path)?) $(, $mode)? ) {
-            Ok(_) => {},
-            Err(e) => {
-                emit_error!(e)
-            }
-        };
+        $self.$proc( impl_fn!(@arg $node $(.$path)?) $(, $mode)? ).unwrap();
     };
     (@funcs $self:expr, $node:ident, { $($proc:ident $params:tt ;)+ } ) => {
         $(
