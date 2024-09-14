@@ -15,61 +15,6 @@ use quote::ToTokens;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-macro_rules! unwrap_or_error {
-    ($res:expr) => {
-        match $res {
-            Ok(p) => p,
-            Err(err) => {
-                abort!(err)
-            }
-        }
-    };
-}
-pub(crate) use unwrap_or_error;
-
-// macro_rules! unwrap2_or_error {
-//     ($res:expr) => {
-//         match $res {
-//             Ok(p) => p,
-//             Err(err) => {
-//                 return proc_macro2::TokenStream::from(syn::Error::from(err).to_compile_error());
-//             }
-//         }
-//     };
-// }
-
-// pub(crate) use unwrap2_or_error;
-
-macro_rules! set_error_and_return {
-    ($err:expr) => {{
-        emit_error!($err);
-        return;
-    }};
-    ($err:expr, $ret:expr) => {{
-        emit_error!($err);
-        return $ret;
-    }};
-}
-pub(crate) use set_error_and_return;
-
-macro_rules! unwrap_or_set_error_and_return {
-    ($res:expr) => {
-        match $res {
-            Ok(p) => p,
-            Err(err) => set_error_and_return!(err),
-        }
-    };
-    ($res:expr, $ret:expr) => {
-        match $res {
-            Ok(p) => p,
-            Err(err) => set_error_and_return!(err, $ret),
-        }
-    };
-}
-pub(crate) use unwrap_or_set_error_and_return;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 pub(crate) fn make_path(name: &str) -> syn::Path {
     let mut segments = Punctuated::<syn::PathSegment, syn::token::Colon2>::new();
     segments.push_value(syn::PathSegment {
