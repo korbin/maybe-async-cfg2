@@ -1,6 +1,6 @@
 [package]
 name = "maybe-async-cfg"
-version = "0.2.4"
+version = "0.2.5"
 authors = [ "Sergey V. Kokorin <nvksv@nvksv.ru>" ]
 edition = "2021"
 readme = "README.md"
@@ -34,7 +34,3 @@ default = ["doctests"]
 debug = []
 no-debug = []
 doctests = ["pulldown-cmark"]
-
-[[test]]
-name = "doctests"
-required-features = ["doctests"]
