@@ -1,88 +1,91 @@
 <!-- cargo-sync-readme start -->
 
 
-# Maybe-Async-Cfg Procedure Macro
+# maybe-async-cfg2
 
-**Why bother writing similar code twice for blocking and async code?**
+**Don't repeat yourself when writing blocking and async code.**
 
-[![Build Status](https://github.com/nvksv/maybe-async-cfg/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/nvksv/maybe-async-cfg/actions)
+[![Build Status](https://github.com/korbin/maybe-async-cfg2/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/korbin/maybe-async-cfg2/actions)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Latest Version](https://img.shields.io/crates/v/maybe-async-cfg.svg)](https://crates.io/crates/maybe-async-cfg)
-[![maybe-async](https://docs.rs/maybe-async-cfg/badge.svg)](https://docs.rs/maybe-async-cfg)
+[![Latest Version](https://img.shields.io/crates/v/maybe-async-cfg2.svg)](https://crates.io/crates/maybe-async-cfg2)
+[![maybe-async](https://docs.rs/maybe-async-cfg2/badge.svg)](https://docs.rs/maybe-async-cfg2)
 
-When implementing both sync and async versions of API in a crate, most API of the two version
-are almost the same except for some async/await keyword.
+When implementing both sync and async variants of an API in a crate, the APIs of the two variants
+are almost the same except for async/await keywords.
 
-`maybe-async-cfg` help unifying async and sync implementation by **procedural macro**.
-- Write async code with normal `async`, `await`, and let `maybe_async_cfg` handles those `async`
-and `await` when you need a blocking code.
-- Add `maybe` attributes and specify feature-based conditions under which sync or async code 
-should be generated.
-- Use `only_if` (or `remove_if`) to keep code in specified version if necessary.
+`maybe-async-cfg2` helps unify async and sync implementations using a **procedural macro**.
+- Write async code with normal `async` and `await` keywords, and let `maybe_async_cfg2` handle
+removing them when blocking code is needed.
+- Add `maybe` attributes and specify feature conditions in the macro parameters to determine
+which variant of code should be generated.
+- Use `only_if` (or `remove_if`) to keep code in a specific variant when necessary.
 
-The `maybe` procedural macro can be applied to the following codes:
-- use declaration
-- trait declaration
-- trait implementation
-- function definition
-- struct and enum definition
+The `maybe` procedural macro can be applied to the following code:
+- use declarations
+- trait declarations
+- trait implementations
+- function definitions
+- struct and enum definitions
 - modules
 
-**RECOMMENDATION**: Enable **resolver ver2** in your crate, which is introduced in Rust 1.51. If
-not, two crates in dependency with conflict version (one async and another blocking) can fail
+**RECOMMENDATION**: Use resolver version 2 in `Cargo.toml`, which was introduced in Rust 1.51. Without
+it, two crates in a dependency with conflicting versions (one async and another blocking) can fail
 compilation.
+
+```toml
+[package]
+resolver = "2"
+# or when using workspaces
+[workspace]
+resolver = "2"
+```
 
 
 ## Motivation
 
-The async/await language feature alters the async world of rust. Comparing with the map/and_then
-style, now the async code really resembles sync version code.
+The async/await language feature transformed the async world of Rust. Compared with the map/and_then
+style, async code now more closely resembles sync code.
 
-In many crates, the async and sync version of crates shares the same API, but the minor
-difference that all async code must be awaited prevent the unification of async and sync code.
-In other words, we are forced to write an async and an sync implementation respectively.
+In many crates, the async and sync variants share the same API, but the minor
+difference that all async code must be awaited prevents the unification of async and sync code.
+In other words, it is necessary to write an async and a sync implementation respectively.
 
 
 ## Macros in Detail
 
-To use `maybe-async-cfg`, we must know which block of codes is only used on sync implementation,
-and which on async. These two versions of the implementation should share the same function
-signatures except for async/await keywords.
+To use `maybe-async-cfg2`, it is necessary to distinguish which code is used exclusively in the sync vs. async variants. These two variants of the implementation should share the same function signatures except for async/await keywords.
 
-Use `maybe` macro for code that is the same in both async and sync versions except for
-async/await keywords. Specify in the macro parameters the conditions (based on features) under
-which async and/or sync versions of the code should appear.
+Use the `maybe` macro for code that is the *same* in both async and sync variants.
+Specify in the macro parameters the conditions (based on features) under which async and/or sync variants of the code should appear.
 
 - attribute macro **`maybe`**
 
-    Offers a unified way to provide sync and async conversion on demand depending on features,
-enabled for your crate, with **async first** policy.
+    Offers a unified way to provide sync and async conversion on demand depending on enabled feature flags, with an **async first** policy.
 
     ```toml
     [dependencies]
-    maybe_async_cfg = "0.2"
+    maybe_async_cfg2 = "0.3"
 
     [features]
     use_sync = []
     use_async = []
     ```
 
-    In this and all the following examples, we use two features. But you can use any conditions
-that are convenient for you, for example, replacing `feature="use_sync"` with
-`not(feature="use_async")` everywhere. Feel free, `maybe-async-cfg` does not analyze the
+    In this and all the following examples, two features are used. Any conditions
+can be used, for example, replacing `feature="use_sync"` with
+`not(feature="use_async")` everywhere. `maybe-async-cfg2` does not analyze the
 conditions in any way, just substituting them as is.
 
-    Add the `maybe` attribute before all the items that need to be changed in different versions
-of the code (sync or async).
+    Add the `maybe` attribute before all items that must be different in sync vs. async code.
 
-    Want to keep async code? Specify the `async` parameter with the condition (based on
-features) when your code should be async.
+    To keep async code, specify the `async` parameter with the condition (based on
+features) for when the code should be async.
 
-    Wanna convert async code to sync? Specify the `sync` parameter with the condition when the
+    To convert async code to sync, specify the `sync` parameter with the condition when
 sync code should be generated.
 
     ```rust
-    #[maybe_async_cfg::maybe(
+    #[maybe_async_cfg2::maybe(
         idents(Foo),
         sync(feature="use_sync"),
         async(feature="use_async")
@@ -105,16 +108,16 @@ sync code should be generated.
 
 - procedural macro **`content`**
 
-    The `content` macro allows you to specify common parameters for many `maybe` macros. Use the
+    The `content` macro allows specifying common parameters for many `maybe` macros. Use the
 internal `default` attribute with the required parameters inside the `content` macro.
 
     ```rust
-    maybe_async_cfg::content!{
-    #![maybe_async_cfg::default(
+    maybe_async_cfg2::content!{
+    #![maybe_async_cfg2::default(
         idents(Foo, Bar),
     )]
 
-    #[maybe_async_cfg::maybe(
+    #[maybe_async_cfg2::maybe(
         sync(feature="use_sync"), 
         async(feature="use_async")
     )]
@@ -122,7 +125,7 @@ internal `default` attribute with the required parameters inside the `content` m
         f: Foo,
     }
 
-    #[maybe_async_cfg::maybe(
+    #[maybe_async_cfg2::maybe(
         sync(feature="use_sync"), 
         async(feature="use_async")
     )]
@@ -154,12 +157,12 @@ internal `default` attribute with the required parameters inside the `content` m
 
 ## Doctests
     
-When writing doctests, you can mark them as applicable only in the corresponding code version. 
+When writing doctests, they can be marked as applicable only in the corresponding code variant. 
 To do this, specify `only_if(`_VARIANT_KEY_`)` in the doctest attributes. Then in all other
-versions of the code, this doctest will be replaced with an empty string.
+variants, this doctest will be replaced with an empty string.
 
 ```rust
-#[maybe_async_cfg::maybe(
+#[maybe_async_cfg2::maybe(
     idents(Foo),
     sync(feature="use_sync"),
     async(feature="use_async")
@@ -199,20 +202,24 @@ struct StructAsync {
 
 ## Examples
 
-### rust client for services
+### Rust client for services
 
-When implementing rust client for any services, like awz3. The higher level API of async and
-sync version is almost the same, such as creating or deleting a bucket, retrieving an object and
+When implementing a Rust client for any service, like AWS S3, the higher-level API of async and
+sync variants is almost the same, such as creating or deleting a bucket, retrieving an object,
 etc.
 
-The example `service_client` is a proof of concept that `maybe_async_cfg` can actually free us
-from writing almost the same code for sync and async. We can toggle between a sync AWZ3 client
-and async one by `is_sync` feature gate when we add `maybe-async-cfg` to dependency.
+The example `service_client` is a proof of concept that `maybe_async_cfg2` can eliminate
+the need to write duplicate code for sync and async variants. The `is_sync` feature gate
+allows toggling between sync and async AWZ3 client implementations.
 
 
 ## Acknowledgements
 
-This crate is a redesigned fork of these wonderful crates:
+This crate is a maintained fork of:
+
+- [nvksv/maybe-async-cfg](https://github.com/nvksv/maybe-async-cfg/)
+
+which is a redesigned fork of these wonderful crates:
 
 - [fMeow/maybe-async-rs](https://github.com/fMeow/maybe-async-rs)
 

@@ -1,13 +1,13 @@
 [package]
-name = "maybe-async-cfg"
-version = "0.2.5"
-authors = [ "Sergey V. Kokorin <nvksv@nvksv.ru>" ]
+name = "maybe-async-cfg2"
+version = "0.3.0"
+authors = [ "Korbin Hoffman <k1@k1.io>" ]
 edition = "2021"
 readme = "README.md"
 license = "MIT"
 description = "A procedure macro to unify sync and async implementations depending on the features of your crate"
-repository = "https://github.com/nvksv/maybe-async-cfg"
-documentation = "https://docs.rs/maybe-async-cfg"
+repository = "https://github.com/korbin/maybe-async-cfg2"
+documentation = "https://docs.rs/maybe-async-cfg2"
 keywords = [ "maybe", "async", "futures", "macros", "proc_macro" ]
 
 [lib]
@@ -21,7 +21,7 @@ proc-macro2 = "1.0"
 quote = "1.0"
 manyhow = { version = "0.11", features = ["syn1"] }
 syn = { version = "1.0", features = [ "visit-mut", "full", "extra-traits" ] }
-pulldown-cmark = { version = "0.11", default-features = false, optional = true }
+pulldown-cmark = { version = "0.13", default-features = false, optional = true }
 
 [dev-dependencies]
 async-trait = "0.1"

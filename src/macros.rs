@@ -10,14 +10,15 @@ use syn::{spanned::Spanned, visit_mut::VisitMut};
 use quote::{quote, ToTokens};
 
 use crate::{
-    MACRO_MAYBE_NAME,
+    debug::*,
     params::{ConvertMode, MacroParameters},
     visit_ext::Visitor,
     visitor_async::{
-        AsyncAwaitVisitor, remove_asyncness_on_trait, remove_asyncness_on_impl,
-        remove_asyncness_on_fn},
+        remove_asyncness_on_fn, remove_asyncness_on_impl, remove_asyncness_on_trait,
+        AsyncAwaitVisitor,
+    },
     visitor_content::ContentVisitor,
-    debug::*
+    MACRO_MAYBE_NAME,
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +34,7 @@ pub fn maybe(args: TokenStream, input: TokenStream) -> syn::Result<TokenStream> 
     }
 
     if let Some(convert_mode) = params.mode_get() {
-        return convert(params, input, convert_mode)
+        return convert(params, input, convert_mode);
     }
 
     let mut tokens = TokenStream::new();
@@ -50,8 +51,9 @@ pub fn maybe(args: TokenStream, input: TokenStream) -> syn::Result<TokenStream> 
                 let args = version.params.to_tokens(Some(version.kind));
                 ts.extend(quote!(#[#name(#args)]));
 
-                let _ =
-                    version.params.extend_tokenstream2_with_inner_attrs(&mut ts)?;
+                let _ = version
+                    .params
+                    .extend_tokenstream2_with_inner_attrs(&mut ts)?;
             }
         }
 
@@ -67,7 +69,11 @@ pub fn maybe(args: TokenStream, input: TokenStream) -> syn::Result<TokenStream> 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub fn convert(mut params: MacroParameters, input: TokenStream, convert_mode: ConvertMode) -> syn::Result<TokenStream> {
+pub fn convert(
+    mut params: MacroParameters,
+    input: TokenStream,
+    convert_mode: ConvertMode,
+) -> syn::Result<TokenStream> {
     dump_tokens!("convert before", &input);
 
     let mut file = syn::parse_macro_input::parse::<syn::File>(input)?;
@@ -81,7 +87,10 @@ pub fn convert(mut params: MacroParameters, input: TokenStream, convert_mode: Co
             syn::Item::Use(item) => convert_use(&mut params, item, convert_mode),
             syn::Item::Mod(item) => convert_mod(&mut params, item, convert_mode),
             _ => {
-                return Err(syn::Error::new(item.span(), "Allowed impl, struct, enum, trait, fn or use items only"));
+                return Err(syn::Error::new(
+                    item.span(),
+                    "Allowed impl, struct, enum, trait, fn or use items only",
+                ));
             }
         }
     }
@@ -102,14 +111,18 @@ fn convert_impl(params: &mut MacroParameters, item: &mut syn::ItemImpl, convert_
     };
 
     if !params.recursive_asyncness_removal_get() {
-        remove_asyncness_on_impl( item, convert_mode, params.send_get() );
+        remove_asyncness_on_impl(item, convert_mode, params.send_get());
     }
 
     let mut visitor = Visitor::new(AsyncAwaitVisitor::new(params, convert_mode));
     visitor.visit_item_impl_mut(item)
 }
 
-fn convert_struct(params: &mut MacroParameters, item: &mut syn::ItemStruct, convert_mode: ConvertMode) {
+fn convert_struct(
+    params: &mut MacroParameters,
+    item: &mut syn::ItemStruct,
+    convert_mode: ConvertMode,
+) {
     params.original_self_name_set(item.ident.to_string(), false);
 
     let mut visitor = Visitor::new(AsyncAwaitVisitor::new(params, convert_mode));
@@ -123,7 +136,11 @@ fn convert_enum(params: &mut MacroParameters, item: &mut syn::ItemEnum, convert_
     visitor.visit_item_enum_mut(item)
 }
 
-fn convert_trait(params: &mut MacroParameters, item: &mut syn::ItemTrait, convert_mode: ConvertMode) {
+fn convert_trait(
+    params: &mut MacroParameters,
+    item: &mut syn::ItemTrait,
+    convert_mode: ConvertMode,
+) {
     params.original_self_name_set(item.ident.to_string(), false);
 
     if !params.recursive_asyncness_removal_get() {
@@ -156,7 +173,6 @@ fn convert_mod(params: &mut MacroParameters, item: &mut syn::ItemMod, convert_mo
     let mut visitor = Visitor::new(AsyncAwaitVisitor::new(params, convert_mode));
     visitor.visit_item_mod_mut(item)
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -2,22 +2,22 @@
 use std::{collections::HashMap, iter::FromIterator};
 
 #[allow(unused_imports)]
-use proc_macro::{TokenStream};
+use proc_macro::TokenStream;
 #[cfg(feature = "doctests")]
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
-use syn::{visit_mut::VisitMut, spanned::Spanned};
+use syn::{spanned::Spanned, visit_mut::VisitMut};
 
-use crate::{
-    MACRO_NOOP_NAME, MACRO_REMOVE_NAME, MACRO_ONLY_IF_NAME, MACRO_REMOVE_IF_NAME,
-    params::{ConvertMode, MacroParameters},
-    utils::{AttributeArgsInParens, PunctuatedList,  make_attr_from_str},
-    visit_ext::{IdentMode, VisitMutExt, Visitor},
-};
 #[cfg(feature = "doctests")]
 use crate::{
     doctests::process_doctests,
-    utils::{EqStr, make_path},
+    utils::{make_path, EqStr},
+};
+use crate::{
+    params::{ConvertMode, MacroParameters},
+    utils::{make_attr_from_str, AttributeArgsInParens, PunctuatedList},
+    visit_ext::{IdentMode, VisitMutExt, Visitor},
+    MACRO_NOOP_NAME, MACRO_ONLY_IF_NAME, MACRO_REMOVE_IF_NAME, MACRO_REMOVE_NAME,
 };
 
 pub struct AsyncAwaitVisitor<'p> {
@@ -81,7 +81,11 @@ pub fn remove_asyncness_on_trait(item: &mut syn::ItemTrait, convert_mode: Conver
     }
 }
 
-pub fn remove_asyncness_on_impl(item: &mut syn::ItemImpl, convert_mode: ConvertMode, send: Option<bool>) {
+pub fn remove_asyncness_on_impl(
+    item: &mut syn::ItemImpl,
+    convert_mode: ConvertMode,
+    send: Option<bool>,
+) {
     match convert_mode {
         ConvertMode::IntoSync => {
             for inner in &mut item.items {
@@ -201,7 +205,11 @@ impl<'p> AsyncAwaitVisitor<'p> {
             false
         };
 
-        let new_name = if success { MACRO_NOOP_NAME } else { MACRO_REMOVE_NAME };
+        let new_name = if success {
+            MACRO_NOOP_NAME
+        } else {
+            MACRO_REMOVE_NAME
+        };
         attr.path = self.params.make_self_path(new_name);
 
         Ok(())
@@ -209,25 +217,32 @@ impl<'p> AsyncAwaitVisitor<'p> {
 
     #[cfg(feature = "doctests")]
     fn process_doc_attrs(&mut self, attrs: &mut Vec<syn::Attribute>) -> syn::Result<()> {
-
         let mut acc: Vec<syn::Attribute> = vec![];
         let mut acc_temp: Vec<syn::Attribute> = vec![];
         let mut lines: Vec<String> = vec![];
         let mut inside_doc = false;
 
-        fn process_docs(acc: &mut Vec<syn::Attribute>, acc_temp: &mut Vec<syn::Attribute>, lines: &mut Vec<String>, params: &MacroParameters) {
+        fn process_docs(
+            acc: &mut Vec<syn::Attribute>,
+            acc_temp: &mut Vec<syn::Attribute>,
+            lines: &mut Vec<String>,
+            params: &MacroParameters,
+        ) {
             assert!(!lines.is_empty());
             let mut first = true;
-            let doc: String = lines.iter().map(|s| {
-                if first {
-                    first = false;
-                    s.clone()
-                } else {
-                    let mut ss = String::from("\n");
-                    ss.push_str( s.as_str() );
-                    ss
-                } 
-            }).collect();
+            let doc: String = lines
+                .iter()
+                .map(|s| {
+                    if first {
+                        first = false;
+                        s.clone()
+                    } else {
+                        let mut ss = String::from("\n");
+                        ss.push_str(s.as_str());
+                        ss
+                    }
+                })
+                .collect();
 
             let processor = |key: &str, code: &str| -> Option<Option<String>> {
                 if let Some(param_key) = params.key_get() {
@@ -240,7 +255,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
                     None
                 }
             };
-    
+
             if let Some(doc) = process_doctests(doc.as_str(), processor) {
                 let mut acc_temp_drain = acc_temp.drain(..);
                 for line in doc.lines() {
@@ -271,7 +286,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
             match (inside_doc, attr.path.is_ident("doc")) {
                 (false, false) => {
                     acc.push(attr);
-                },
+                }
                 (false, true) => {
                     let es = syn::parse2::<EqStr>(attr.tokens.clone())?;
                     let doc = es.str.value();
@@ -279,16 +294,16 @@ impl<'p> AsyncAwaitVisitor<'p> {
                     lines.push(doc);
                     acc_temp.push(attr);
                     inside_doc = true;
-                },
+                }
                 (true, false) => {
                     process_docs(&mut acc, &mut acc_temp, &mut lines, &self.params);
-            
+
                     acc_temp.clear();
                     lines.clear();
                     inside_doc = false;
 
                     acc.push(attr);
-                },
+                }
                 (true, true) => {
                     let es = syn::parse2::<EqStr>(attr.tokens.clone())?;
                     let doc = es.str.value();
@@ -297,7 +312,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
                     acc_temp.push(attr);
                 }
             }
-        };
+        }
 
         if inside_doc {
             process_docs(&mut acc, &mut acc_temp, &mut lines, &self.params);
@@ -360,9 +375,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
             ConvertMode::IntoSync => {
                 // async -> sync, remove async_impl blocks
                 match node {
-                    syn::Expr::Await(expr) => {
-                        *node = (*expr.base).clone()
-                    }
+                    syn::Expr::Await(expr) => *node = (*expr.base).clone(),
 
                     syn::Expr::Async(expr) => {
                         let inner = &expr.block;
@@ -509,7 +522,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
 
     fn process_item_impl(&mut self, node: &mut syn::ItemImpl) -> syn::Result<()> {
         if self.params.recursive_asyncness_removal_get() {
-            remove_asyncness_on_impl( node, self.convert_mode, self.params.send_get() );
+            remove_asyncness_on_impl(node, self.convert_mode, self.params.send_get());
         };
 
         Ok(())
@@ -517,7 +530,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
 
     fn process_item_trait(&mut self, node: &mut syn::ItemTrait) -> syn::Result<()> {
         if self.params.recursive_asyncness_removal_get() {
-            remove_asyncness_on_trait( node, self.convert_mode );
+            remove_asyncness_on_trait(node, self.convert_mode);
         };
 
         Ok(())
@@ -525,7 +538,7 @@ impl<'p> AsyncAwaitVisitor<'p> {
 
     fn process_item_fn(&mut self, node: &mut syn::ItemFn) -> syn::Result<()> {
         if self.params.recursive_asyncness_removal_get() {
-            remove_asyncness_on_fn( node, self.convert_mode );
+            remove_asyncness_on_fn(node, self.convert_mode);
         };
 
         Ok(())
@@ -572,7 +585,8 @@ impl<'p> AsyncAwaitVisitor<'p> {
             syn::UseTree::Path(syn::UsePath { ident, .. }) => {
                 if let Some(ir) = self.params.idents_get(&ident.to_string()) {
                     if !ir.use_mode {
-                        *ident = ir.ident_add_suffix(ident, self.convert_mode, self.params.key_get());
+                        *ident =
+                            ir.ident_add_suffix(ident, self.convert_mode, self.params.key_get());
                     }
                 }
             }
@@ -584,10 +598,15 @@ impl<'p> AsyncAwaitVisitor<'p> {
                         *node = syn::UseTree::Rename(syn::UseRename {
                             ident: ident.clone(),
                             as_token: syn::Token![as](ident.span()),
-                            rename: ir.ident_add_suffix(ident, self.convert_mode, self.params.key_get()),
+                            rename: ir.ident_add_suffix(
+                                ident,
+                                self.convert_mode,
+                                self.params.key_get(),
+                            ),
                         });
                     } else {
-                        *ident = ir.ident_add_suffix(ident, self.convert_mode, self.params.key_get());
+                        *ident =
+                            ir.ident_add_suffix(ident, self.convert_mode, self.params.key_get());
                     }
                 }
             }

@@ -5,9 +5,7 @@ use std::iter::FromIterator;
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{
-    visit_mut::{self, VisitMut},
-};
+use syn::visit_mut::{self, VisitMut};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -68,7 +66,7 @@ pub trait VisitMutExt {
 
 pub struct Visitor<T> {
     pub inner: T,
-//    err: Option<syn::Error>,
+    //    err: Option<syn::Error>,
 }
 
 impl<T> Visitor<T> {
@@ -87,8 +85,6 @@ impl<T> Visitor<T> {
         Ok(ts)
     }
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

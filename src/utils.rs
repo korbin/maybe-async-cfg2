@@ -4,11 +4,7 @@ use syn::{
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
     token::Comma,
-    Expr,
-    Ident,
-    Meta,
-    NestedMeta,
-    Token,
+    Expr, Ident, Meta, NestedMeta, Token,
 };
 
 use quote::ToTokens;
@@ -122,8 +118,11 @@ impl<T: std::fmt::Display> std::fmt::Debug for DebugByDisplay<T> {
 pub struct OptionToTokens<T: ToTokens>(pub Option<T>);
 
 impl<T: ToTokens> std::fmt::Debug for OptionToTokens<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {    
-        self.0.as_ref().map(|m| DebugByDisplay(m.to_token_stream())).fmt(f)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0
+            .as_ref()
+            .map(|m| DebugByDisplay(m.to_token_stream()))
+            .fmt(f)
     }
 }
 
@@ -143,4 +142,3 @@ impl Parse for EqStr {
         })
     }
 }
-

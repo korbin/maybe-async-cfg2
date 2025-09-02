@@ -1,4 +1,4 @@
-use pulldown_cmark::{Parser, Event, Tag, TagEnd, CodeBlockKind};
+use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag, TagEnd};
 
 fn as_lang_tokens(string: &str) -> impl Iterator<Item = &str> {
     // Pandoc, which Rust once used for generating documentation,
@@ -35,7 +35,7 @@ fn parse_lang(lang: &str) -> Option<(String, String)> {
     for token in as_lang_tokens(lang) {
         if token.starts_with(our_prefix) && token.ends_with(")") {
             has_our_attr = true;
-            key = token[our_prefix.len() .. token.len()-1].to_string();
+            key = token[our_prefix.len()..token.len() - 1].to_string();
             continue;
         }
 
@@ -64,19 +64,22 @@ fn paste_code(new_lang: &str, code: &str, indent: Option<&str>) -> String {
 
     if let Some(indent) = indent {
         let mut first = true;
-        res = res.lines().map(|s| {
-            if first {
-                first = false;
-                return s.to_string()
-            };
+        res = res
+            .lines()
+            .map(|s| {
+                if first {
+                    first = false;
+                    return s.to_string();
+                };
 
-            let mut res = String::new();
-            res.push('\n');
-            res.push_str(indent);
-            res.push_str(s);
+                let mut res = String::new();
+                res.push('\n');
+                res.push_str(indent);
+                res.push_str(s);
 
-            res
-        }).collect();        
+                res
+            })
+            .collect();
     }
 
     res
@@ -86,7 +89,7 @@ fn get_indent_from_content(content: &str) -> Option<String> {
     let content = content.as_bytes();
     let mut len = content.len();
 
-    if !(content[len-1] == b'`' && content[len-2] == b'`' && content[len-3] == b'`') {
+    if !(content[len - 1] == b'`' && content[len - 2] == b'`' && content[len - 3] == b'`') {
         return None;
     }
 
@@ -95,22 +98,25 @@ fn get_indent_from_content(content: &str) -> Option<String> {
     let mut rres: Vec<u8> = vec![];
 
     while len >= 1 {
-        let b = content[len-1];
+        let b = content[len - 1];
 
         if b.is_ascii_whitespace() && !(b == b'\n' || b == b'\r') {
             rres.push(b);
             len -= 1;
         } else {
-            break
+            break;
         }
     }
 
     let res: String = rres.into_iter().rev().map(|b| b as char).collect();
-    
+
     Some(res)
 }
 
-pub fn process_doctests(doc: &str, processor: impl Fn(&str, &str) -> Option<Option<String>>) -> Option<String> {
+pub fn process_doctests(
+    doc: &str,
+    processor: impl Fn(&str, &str) -> Option<Option<String>>,
+) -> Option<String> {
     let parser = Parser::new(doc);
 
     let mut prev_offset = 0usize;
@@ -130,18 +136,14 @@ pub fn process_doctests(doc: &str, processor: impl Fn(&str, &str) -> Option<Opti
 
                 if level == 1 {
                     match match kind {
-                        CodeBlockKind::Fenced(ref lang) => {
-                            parse_lang(lang)
-                        },
-                        CodeBlockKind::Indented => {
-                            None
-                        }
+                        CodeBlockKind::Fenced(ref lang) => parse_lang(lang),
+                        CodeBlockKind::Indented => None,
                     } {
                         Some((key, new_lang)) => {
                             let mut new_start = offset.start;
                             let mut success = false;
                             while prev_offset < new_start {
-                                let b = doc.as_bytes()[new_start-1];
+                                let b = doc.as_bytes()[new_start - 1];
                                 if !b.is_ascii_whitespace() {
                                     break;
                                 }
@@ -159,32 +161,35 @@ pub fn process_doctests(doc: &str, processor: impl Fn(&str, &str) -> Option<Opti
 
                             new_doc.push_str(&doc[prev_offset..new_start]);
                             prev_offset = new_start;
-        
+
                             block_key = key;
                             block_new_lang = new_lang;
                             code.clear();
                             inside_code = true;
-                        },
-                        None => {},
+                        }
+                        None => {}
                     };
                 }
-            },
+            }
             Event::End(TagEnd::CodeBlock) => {
                 if level == 1 && inside_code {
                     let content = &doc[prev_offset..offset.end];
                     prev_offset = offset.end;
 
-
                     match processor(block_key.as_str(), code.as_str()) {
                         Some(Some(new_code)) => {
                             let indent = get_indent_from_content(content);
-                            let new_code = paste_code(block_new_lang.as_str(), new_code.as_str(), indent.as_ref().map(|s| s.as_str()));
+                            let new_code = paste_code(
+                                block_new_lang.as_str(),
+                                new_code.as_str(),
+                                indent.as_ref().map(|s| s.as_str()),
+                            );
                             new_doc.push_str(new_code.as_str());
                             has_changes = true;
-                        },
+                        }
                         Some(None) => {
                             has_changes = true;
-                        },
+                        }
                         None => {
                             new_doc.push_str(content);
                         }
@@ -193,13 +198,13 @@ pub fn process_doctests(doc: &str, processor: impl Fn(&str, &str) -> Option<Opti
                     inside_code = false;
                 };
                 level -= 1;
-            },
+            }
             Event::Text(ref text) if inside_code => {
                 code.push_str(&text);
-            },
+            }
             _ => {}
         }
-    };
+    }
 
     if has_changes {
         if prev_offset < doc.len() {

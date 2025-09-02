@@ -7,13 +7,10 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, ToTokens};
 use syn::{
     punctuated::Punctuated, spanned::Spanned, token::Comma, Attribute, AttributeArgs, Ident, Lit,
-    LitStr, Meta, MetaNameValue, NestedMeta, MetaList, 
+    LitStr, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
-use crate::{
-    DEFAULT_CRATE_NAME, STANDARD_MACROS,
-    utils::*,
-};
+use crate::{utils::*, DEFAULT_CRATE_NAME, STANDARD_MACROS};
 
 const MODE_INTO_ASYNC: &'static str = "__into_async";
 const MODE_INTO_SYNC: &'static str = "__into_sync";
@@ -67,7 +64,7 @@ impl IdentRecord {
         }
     }
 
-    pub fn with_snake_case( snake_case: bool ) -> Self {
+    pub fn with_snake_case(snake_case: bool) -> Self {
         Self {
             snake_case,
             use_mode: false,
@@ -78,7 +75,12 @@ impl IdentRecord {
         }
     }
 
-    pub fn ident_add_suffix(&self, ident: &Ident, convert_mode: ConvertMode, version_name: Option<&str>) -> Ident {
+    pub fn ident_add_suffix(
+        &self,
+        ident: &Ident,
+        convert_mode: ConvertMode,
+        version_name: Option<&str>,
+    ) -> Ident {
         if self.keep {
             return ident.clone();
         }
@@ -116,19 +118,19 @@ impl IdentRecord {
 
     pub fn to_nestedmeta(&self, name: &str) -> syn::NestedMeta {
         let mut nested = Punctuated::<syn::NestedMeta, syn::token::Comma>::new();
-        
+
         if self.snake_case {
             nested.push(syn::NestedMeta::Meta(syn::Meta::Path(make_path("snake"))));
         };
-    
+
         if self.use_mode {
             nested.push(syn::NestedMeta::Meta(syn::Meta::Path(make_path("use"))));
         };
-    
+
         if self.keep {
             nested.push(syn::NestedMeta::Meta(syn::Meta::Path(make_path("keep"))));
         };
-    
+
         if let Some(value) = &self.ident_async {
             if value == name {
                 nested.push(syn::NestedMeta::Meta(syn::Meta::Path(make_path("async"))));
@@ -143,19 +145,19 @@ impl IdentRecord {
                 nested.push(make_nestedmeta_namevalue("sync", value.as_str()));
             }
         };
-    
+
         if let Some(idents) = &self.idents {
             for (key, value) in idents {
                 nested.push(make_nestedmeta_namevalue(key.as_str(), value.as_str()));
             }
         };
-    
+
         if nested.is_empty() {
             syn::NestedMeta::Meta(syn::Meta::Path(make_path(name)))
         } else {
             make_nestedmeta_list(name, nested)
         }
-    }    
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,26 +191,38 @@ pub struct MacroParameters {
 }
 
 impl std::fmt::Debug for MacroParameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {    
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MacroParameters")
-           .field("mode", &self.mode)
-           .field("disable", &self.disable)
-           .field("key", &self.key)
-           .field("self_name", &self.self_name)
-           .field("prefix", &self.prefix)
-           .field("idents", &self.idents)
-           .field("send", &self.send)
-           .field("recursive_asyncness_removal", &self.recursive_asyncness_removal)
-           .field("keep_self", &self.keep_self)
-           .field("cfg", &OptionToTokens(self.cfg.as_ref()))
-           .field("outer_attrs", &DebugByDisplay(self.outer_attrs.to_token_stream()))
-           .field("inner_attrs", &DebugByDisplay(self.inner_attrs.to_token_stream()))
-           .field("outer_attrs", &DebugByDisplay(self.outer_attrs.to_token_stream()))
-           .field("drop_attrs", &self.drop_attrs)
-           .field("replace_features", &self.replace_features)
-           .field("versions", &self.versions)
-           .finish()
-        }
+            .field("mode", &self.mode)
+            .field("disable", &self.disable)
+            .field("key", &self.key)
+            .field("self_name", &self.self_name)
+            .field("prefix", &self.prefix)
+            .field("idents", &self.idents)
+            .field("send", &self.send)
+            .field(
+                "recursive_asyncness_removal",
+                &self.recursive_asyncness_removal,
+            )
+            .field("keep_self", &self.keep_self)
+            .field("cfg", &OptionToTokens(self.cfg.as_ref()))
+            .field(
+                "outer_attrs",
+                &DebugByDisplay(self.outer_attrs.to_token_stream()),
+            )
+            .field(
+                "inner_attrs",
+                &DebugByDisplay(self.inner_attrs.to_token_stream()),
+            )
+            .field(
+                "outer_attrs",
+                &DebugByDisplay(self.outer_attrs.to_token_stream()),
+            )
+            .field("drop_attrs", &self.drop_attrs)
+            .field("replace_features", &self.replace_features)
+            .field("versions", &self.versions)
+            .finish()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +270,9 @@ impl MacroParameters {
                             "self" => lit_str!(lit, builder, self_name, "Expected string literal"),
                             "prefix" => lit_str!(lit, builder, prefix, "Expected string literal"),
                             "send" => lit_str!(lit, builder, send, "Expected string literal"),
-                            "feature" => lit_meta!(lit, meta, builder, feature, "Expected string literal"),
+                            "feature" => {
+                                lit_meta!(lit, meta, builder, feature, "Expected string literal")
+                            }
                             _ => {
                                 return Err(syn::Error::new_spanned(
                                     meta.to_token_stream(),
@@ -298,7 +314,7 @@ impl MacroParameters {
                                 _ => builder.inner_attr(meta)?,
                             }
                         } else {
-                            builder.inner_attr(meta)?    
+                            builder.inner_attr(meta)?
                         }
                     }
                 },
@@ -331,21 +347,28 @@ impl MacroParameters {
         Self::from_args(&aip.args)
     }
 
-    pub fn to_nestedmeta(&self, add_mode: Option<ConvertMode>) -> Punctuated<syn::NestedMeta, syn::token::Comma> {
+    pub fn to_nestedmeta(
+        &self,
+        add_mode: Option<ConvertMode>,
+    ) -> Punctuated<syn::NestedMeta, syn::token::Comma> {
         let mut args = Punctuated::<syn::NestedMeta, syn::token::Comma>::new();
 
-        let mode = if let Some(mode) = add_mode { 
+        let mode = if let Some(mode) = add_mode {
             Some(mode)
         } else if let Some(mode) = self.mode {
             Some(mode)
         } else {
             None
         };
-        
-        if let Some(mode) = mode { 
+
+        if let Some(mode) = mode {
             match mode {
-                ConvertMode::IntoAsync => args.push(NestedMeta::Meta(Meta::Path(make_path(MODE_INTO_ASYNC)))),
-                ConvertMode::IntoSync => args.push(NestedMeta::Meta(Meta::Path(make_path(MODE_INTO_SYNC)))),
+                ConvertMode::IntoAsync => {
+                    args.push(NestedMeta::Meta(Meta::Path(make_path(MODE_INTO_ASYNC))))
+                }
+                ConvertMode::IntoSync => {
+                    args.push(NestedMeta::Meta(Meta::Path(make_path(MODE_INTO_SYNC))))
+                }
             }
         }
 
@@ -491,7 +514,7 @@ impl MacroParameters {
     }
 
     pub fn default_ident_record(&self, snake_case: bool) -> IdentRecord {
-        IdentRecord::with_snake_case( snake_case )
+        IdentRecord::with_snake_case(snake_case)
     }
 
     pub fn apply_parent(child: &mut MacroParameters, parent: &MacroParameters) -> syn::Result<()> {
@@ -538,15 +561,15 @@ impl MacroParameters {
         if !self.keep_self {
             if self.idents.get(name.as_ref()).is_none() {
                 let mut ir = self.default_ident_record(snake_case);
-    
+
                 if let Some(key) = &self.key {
                     if let Some(self_name) = &self.self_name {
                         let mut idents = HashMap::new();
-                        idents.insert( key.clone(), self_name.clone() );
+                        idents.insert(key.clone(), self_name.clone());
                         ir.idents = Some(idents);
                     }
                 }
-    
+
                 self.idents.insert(name.as_ref().to_string(), ir);
             }
         }
@@ -638,7 +661,7 @@ impl MacroParameters {
         }
     }
 
-    pub fn standard_macros<'s>(&'s self) -> &[&'s str] {
+    pub fn standard_macros<'s>(&'s self) -> &'s [&'s str] {
         STANDARD_MACROS
     }
 }
@@ -657,7 +680,7 @@ impl MacroParametersBuilder {
                 mode: None,
                 disable: false,
                 key: None,
-                self_name: None, 
+                self_name: None,
                 prefix: None,
                 idents: HashMap::new(),
                 keep_self: false,
@@ -787,7 +810,8 @@ impl MacroParametersBuilder {
                                         ir.ident_async = Some(ivalue);
                                     }
                                     _ => {
-                                        let idents = ir.idents.get_or_insert_with(|| HashMap::new());
+                                        let idents =
+                                            ir.idents.get_or_insert_with(|| HashMap::new());
                                         idents.insert(iname, ivalue);
                                     }
                                 }
